@@ -75,6 +75,35 @@ the following descriptor is generated:
   ("remote_address", "<trusted address from x-forwarded-for>")
   ("source_cluster", "from_cluster")
 
+Rate Limit Override
+-------------------
+
+A :ref:`rate limit action <envoy_v3_api_msg_config.route.v3.RateLimit>` can optionally contain
+a :ref:`limit override <envoy_v3_api_msg_config.route.v3.RateLimit.Override>`. The limit value
+will be appended to the descriptor produced by the action and sent to the ratelimit service,
+overriding the static service configuration.
+
+The override can be configured as a static value/unit struct, or taken from the
+:ref:`Dynamic Metadata <envoy_v3_api_msg_config.core.v3.Metadata>` under a specified
+:ref: `key <envoy_v3_api_msg_config.type.metadata.v3.MetadataKey>`. If the value is misconfigured
+or key does not exist, the override configuration is ignored.
+
+Example 3
+^^^^^^^^^
+
+The following configuration
+
+.. code-block:: yaml
+
+  actions:
+      - {generic_key: {descriptor_value: some_value}}
+  limit:
+      generic_value:
+          requests_per_unit: 10
+          unit: MINUTE
+
+Will override the rate limit to 10 requests per minute for the generated descriptor.
+
 Statistics
 ----------
 

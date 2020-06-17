@@ -13,8 +13,45 @@
 #include "common/config/metadata.h"
 #include "common/http/header_utility.h"
 
+#include "absl/types/optional.h"
+
 namespace Envoy {
 namespace Router {
+
+/**
+ * Populate rate limit override with provided value.
+ */
+class GenericValueRateLimitOverride : public RateLimitOverrideAction {
+public:
+  GenericValueRateLimitOverride(
+      const envoy::config::route::v3::RateLimit::Override::GenericValue& config)
+      : limit_(config.requests_per_unit()), unit_(config.unit()) {}
+
+  // Router::RateLimitOverrideAction
+  bool populateOverride(RateLimit::Descriptor& descriptor,
+                        const envoy::config::core::v3::Metadata* metadata) const override;
+
+private:
+  const uint32_t limit_;
+  const envoy::type::v3::RateLimitUnit unit_;
+};
+
+/**
+ * Populate rate limit override from dynamic metadata.
+ */
+class DynamicMetadataRateLimitOverride : public RateLimitOverrideAction {
+public:
+  DynamicMetadataRateLimitOverride(
+      const envoy::config::route::v3::RateLimit::Override::DynamicMetadata& config)
+      : metadata_key_(config.metadata_key()) {}
+
+  // Router::RateLimitOverrideAction
+  bool populateOverride(RateLimit::Descriptor& descriptor,
+                        const envoy::config::core::v3::Metadata* metadata) const override;
+
+private:
+  const Envoy::Config::MetadataKey metadata_key_;
+};
 
 /**
  * Action for source cluster rate limiting.
@@ -149,6 +186,7 @@ private:
   const std::string disable_key_;
   uint64_t stage_;
   std::vector<RateLimitActionPtr> actions_;
+  absl::optional<RateLimitOverrideActionPtr> limit_override_ = absl::nullopt;
 };
 
 /**
